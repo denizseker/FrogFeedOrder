@@ -5,7 +5,7 @@ public class Cell : MonoBehaviour
 {
     public Entity entityOnCell;
     [HideInInspector] public GameManager.Colour cellColour;
-    [HideInInspector] public GameObject ownerDefaultCell;
+    [HideInInspector] public Cell_Default ownerDefaultCell;
 
 
     private void OnEnable()

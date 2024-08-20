@@ -41,32 +41,6 @@ public class CellManager : MonoBehaviour
     }
 
 
-    public void CheckNextCell(Cell_Default cellDefault,Direction direction)
-    {
-        Cell_Default nextCell;
-
-        switch (direction)
-        {
-            case Direction.Right:
-                nextCell = cells[(int)-cellDefault.transform.position.x + 1, (int)cellDefault.transform.position.z];
-                break;
-            case Direction.Left:
-                nextCell = cells[(int)-cellDefault.transform.position.x - 1, (int)cellDefault.transform.position.z];
-                break;
-            case Direction.Up:
-                nextCell = cells[(int)-cellDefault.transform.position.x, (int)cellDefault.transform.position.z - 1];
-                break;
-            case Direction.Down:
-                nextCell = cells[(int)-cellDefault.transform.position.x, (int)cellDefault.transform.position.z + 1];
-                break;
-            default:
-                nextCell = null;
-                break;
-        }
-
-        Debug.Log(nextCell);
-
-    }
 
 
 

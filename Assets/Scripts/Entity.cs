@@ -5,7 +5,7 @@ using UnityEngine;
 public abstract class Entity : MonoBehaviour
 {
     protected CellManager.Direction entityDirection;
-    public GameObject entityCell;
+    public Cell entityCell;
     public GameManager.Colour entityColour;
     public abstract void Interact();
 }
