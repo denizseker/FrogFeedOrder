@@ -3,6 +3,16 @@ using UnityEngine;
 
 public class CellManager : MonoBehaviour
 {
+
+
+    public enum Condition
+    {
+        FinalCell,
+        WrongCell,
+        ArrowCell,
+        NextCell,
+    }
+
     public enum Direction
     {
         Right,

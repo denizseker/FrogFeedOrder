@@ -206,7 +206,7 @@ public class Cell_Default : Cell
 
 
 
-    public Cell CheckNextCell(CellManager.Direction direction)
+    public Cell GetNextCell(CellManager.Direction direction)
     {
 
         Cell_Default nextCell;
@@ -230,7 +230,6 @@ public class Cell_Default : Cell
                 break;
         }
 
-
         if (nextCell.activeCell.cellColour == activeCell.cellColour)
         {
             return nextCell.activeCell;
@@ -240,9 +239,6 @@ public class Cell_Default : Cell
             return null;
         }
     }
-
-
-
 
     private void OnDrawGizmos()
     {

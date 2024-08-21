@@ -1,20 +1,22 @@
 using UnityEngine;
 using DG.Tweening;
 using System.Collections.Generic;
+using System.Collections;
 
 public class Frog : Entity
 {
     private LineRenderer lineRenderer;  // LineRenderer component
     private Cell_Default cellDefault;    // Reference to the default cell of the entity
-    private float duration = 0.5f;         // Duration of the line animation
+    private float duration = 0.3f;         // Duration of the line animation
     private List<Vector3> pathPoints = new List<Vector3>(); // List to store the path points
-
+    private List<Cell> cellQue = new List<Cell>(); // List to store the path points
+    Sequence returnSequenceGrapes;
     private void Start()
     {
         lineRenderer = GetComponent<LineRenderer>();  // Get the LineRenderer component
         cellDefault = entityCell.ownerDefaultCell;    // Get the default cell of the entity
+        
     }
-
     private void Update()
     {
         if (Input.GetKeyDown(KeyCode.K))
@@ -62,11 +64,11 @@ public class Frog : Entity
 
         // Set start and end points
         Vector3 startPoint = new Vector3(transform.position.x, 0.35f, transform.position.z);
-        Cell nextCell = cellDefault.CheckNextCell(entityDirection);
+        Cell nextCell = cellDefault.GetNextCell(entityDirection);
 
         if (nextCell == null)
         {
-            Debug.LogWarning("Next cell not found.");
+            Debug.Log("Next cell not found.");
             return;
         }
 
@@ -78,16 +80,21 @@ public class Frog : Entity
         pathPoints.Clear();
         pathPoints.Add(startPoint);
         pathPoints.Add(endPoint);
+        cellQue.Add(cellDefault);
+        cellQue.Add(nextCell);
+        Hit();
+
+        returnSequenceGrapes = DOTween.Sequence();
+        returnSequenceGrapes.Pause();
 
         // Start the line expansion animation
         AnimateLineRenderer(endPoint, nextCell,1);
+
     }
 
     private void AnimateLineRenderer(Vector3 endPoint, Cell currentCell,int newIndex)
     {
-
-
-        DOTween.To(() => lineRenderer.GetPosition(1),
+        DOTween.To(() => lineRenderer.GetPosition(newIndex - 1),
             x => lineRenderer.SetPosition(newIndex, x),
             endPoint,
             duration)
@@ -98,7 +105,8 @@ public class Frog : Entity
             })
                 .OnComplete(() =>
                 {
-                    Debug.Log(newIndex);
+                    currentCell.entityOnCell.GetComponent<Grape>().Hit();             
+                    //TODO: Ýleri giderken her cellin orta noktasýna gelince cell üstündeki entititylerin ve cellin davranýþýný triggerla.
                     OnLineRendererAnimationComplete(currentCell);
                 });
     }
@@ -107,7 +115,7 @@ public class Frog : Entity
     {
 
         // Get the next cell from the current cell
-        Cell nextCell = currentCell.ownerDefaultCell.CheckNextCell(entityDirection);
+        Cell nextCell = currentCell.ownerDefaultCell.GetNextCell(entityDirection);
 
         if (nextCell != null)
         {
@@ -116,7 +124,7 @@ public class Frog : Entity
 
             // Add the new end point to the pathPoints list
             pathPoints.Add(newEndPoint);
-
+            cellQue.Add(nextCell);
             // Add a new point to the line renderer
             lineRenderer.positionCount += 1;
             int newIndex = lineRenderer.positionCount - 1;
@@ -127,46 +135,72 @@ public class Frog : Entity
         }
         else
         {
-            // Once all cells are processed, start the return animation
-            StartReturnAnimation();
+            DOVirtual.DelayedCall(0.6f, StartReturnAnimation);
         }
+    }
+
+
+    public void Hit()
+    {
+        // Animasyon sýrasý oluþtur
+        Sequence pickUpSequence = DOTween.Sequence();
+        // Scale'i 0.7'den 1.7'ye hýzlýca artýr
+        pickUpSequence.Append(transform.DOScale(1.4f, 0.1f).SetEase(Ease.InOutQuad));
+        // Scale'i 1'den 0.7'ye yavaþça azalt
+        pickUpSequence.Append(transform.DOScale(1f, 0.4f).SetEase(Ease.OutQuad));
+        // Animasyonu baþlat
+        pickUpSequence.Play();
     }
 
     private void StartReturnAnimation()
     {
-        //if (pathPoints.Count < 2)
-        //{
-        //    Debug.LogWarning("Not enough points to return.");
-        //    return;
-        //}
+        if (pathPoints.Count < 2)
+        {
+            Debug.LogWarning("Not enough points to return.");
+            return;
+        }
 
-        //// Create a sequence for the return animation
-        //Sequence returnSequence = DOTween.Sequence();
+        // Create a sequence for the return animation
+        Sequence returnSequenceTongue = DOTween.Sequence();
+        // Add animations for returning through all points in reverse order
+        for (int i = pathPoints.Count - 1; i > 0; i--)
+        {
+            int currentIndex = i;
+            int nextIndex = i - 1;
 
-        //// Add animations for returning through all points in reverse order
-        //for (int i = pathPoints.Count - 1; i > 0; i--)
-        //{
-        //    int currentIndex = i;
-        //    int nextIndex = i - 1;
+            //Debug.Log("Next target: " + pathPoints[nextIndex]);
 
-        //    // Add animation to the sequence
-        //    returnSequence.Insert(0, DOTween.To(() => lineRenderer.GetPosition(currentIndex),
-        //        x => lineRenderer.SetPosition(currentIndex, x),
-        //        pathPoints[nextIndex], duration)
-        //        .SetEase(Ease.Linear));
-        //}
+            returnSequenceTongue.Append(DOTween.To(() => lineRenderer.GetPosition(currentIndex),
+                     x => lineRenderer.SetPosition(currentIndex, x),
+                     pathPoints[nextIndex], duration)
+                    .SetEase(Ease.Linear)
+                    .OnComplete(() =>
+                    {
+                        //TODO: Geri dönerken her cell üzerinden dönüþ tamamlandýðýnda cell üstündeki entititylerin ve cellin davranýþýný triggerla.
+                        lineRenderer.positionCount -= 1;
+                    }));
+        }
 
-        //// Animate the last segment to match the first point
-        //returnSequence.Insert(0, DOTween.To(() => lineRenderer.GetPosition(1),
-        //    x => lineRenderer.SetPosition(1, x),
-        //    pathPoints[0], duration)
-        //    .SetEase(Ease.Linear));
 
-        //// Play the sequence
-        //returnSequence.Play();
+        for (int i = cellQue.Count-1; i >= 1; i--)
+        {
+            int timesToRun = cellQue.Count - i;
+            if (i == cellQue.Count-1)
+            {
+                for (int j = 0; j < timesToRun; j++)
+                {
+                    returnSequenceGrapes.Append(cellQue[i].entityOnCell.transform.DOMove(cellQue[i - 1].transform.position, 0.4f));
+                }
+            }
+        }
 
-        //// Log completion
-        //returnSequence.OnComplete(() => Debug.Log("Return animation completed."));
+
+        // Play the sequence
+        //returnSequenceGrapes.Play();
+        returnSequenceTongue.Play();
+
+        // Log completion
+        returnSequenceTongue.OnComplete(() => Debug.Log("Return animation completed."));
     }
 
     private void OnMouseDown()
