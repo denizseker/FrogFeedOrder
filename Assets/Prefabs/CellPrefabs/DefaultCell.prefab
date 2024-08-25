@@ -97,11 +97,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: df9f6bcf829d01245bc3a30397676c41, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  cellColour: 0
-  bottomCell: {fileID: 0}
   adjacentCells: []
   cellStack: []
-  activeCell: {fileID: 0}
   cellPrefabs:
   - {fileID: 5890953367359711303, guid: 8446069c552b51b4b87b7f4bceac6cc0, type: 3}
   - {fileID: 7559498350649937359, guid: d484558e2f019ae4d956eb39e77d4156, type: 3}
@@ -120,3 +117,11 @@ MonoBehaviour:
   - {fileID: 42308670928261797, guid: 577436804ce8d0c469f1a4decdf7e4b1, type: 3}
   - {fileID: 6937919570098036726, guid: ac7d4746e388bb942a21097141d756da, type: 3}
   - {fileID: 7985925938049033515, guid: bcb967aca7bb9ca4d8a22d2ca3528b93, type: 3}
+  arrowPrefabs:
+  - {fileID: 956796314158084700, guid: fa13d49f5f052434fb22289967f734c3, type: 3}
+  - {fileID: 7800604039006834755, guid: 61e3596eb45f5dc49863cf2ea2731613, type: 3}
+  - {fileID: 6903586676849169125, guid: fcc106e87549b8546916235609fa3b30, type: 3}
+  - {fileID: 8530648599153075283, guid: 97cdb4cdd92223a49aa13a9d1e13c4a0, type: 3}
+  - {fileID: 1783296282779142398, guid: 6208c0a8675ddc946ab1862beb314e05, type: 3}
+  cellColour: 5
+  activeCell: {fileID: 0}

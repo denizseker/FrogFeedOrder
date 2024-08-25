@@ -2,13 +2,16 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using DG.Tweening;
+using System.Linq;
+using System;
 
 public class Grape : Entity
 {
-
-    public override void Interact()
+    float segmentDuration = 0.3f;
+    public Tween pathTween;
+    public override void HitByTongue(Frog frog)
     {
-        Debug.Log("Grape");
+        Hit();
     }
 
     public void Hit()
@@ -23,6 +26,36 @@ public class Grape : Entity
         pickUpSequence.Append(transform.DOScale(1f, 0.1f).SetEase(Ease.OutBack));
         // Animasyonu baþlat
         pickUpSequence.Play();
+    }
+
+    public void StartCollect()
+    {
+        pathTween.Play();
+    }
+    public void SetForCollect(Vector3[] cellPoints)
+    {
+        if (cellPoints == null || cellPoints.Length == 0)
+        {
+            Debug.LogWarning("cellPoints array is empty or null.");
+            return;
+        }
+
+        //Debug.Log($"{gameObject} cellpoint last item: {cellPoints[^1]}");
+
+        float totalDuration = segmentDuration * cellPoints.Length;
+
+        Vector3[] reverseArray = cellPoints.Reverse().ToArray();
+
+        pathTween = gameObject.transform.DOPath(reverseArray, totalDuration, PathType.Linear).Pause().OnComplete(() =>
+        {
+
+            transform.DOScale(new Vector3(0, 1, 0), 0.10f).SetEase(Ease.Linear)
+            .OnComplete(() =>
+            {
+                Destroy(gameObject);
+            });
+
+        }); ;
     }
 
 

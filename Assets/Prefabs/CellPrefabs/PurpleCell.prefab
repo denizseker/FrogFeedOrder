@@ -11,8 +11,8 @@ GameObject:
   - component: {fileID: 5776726540293730570}
   - component: {fileID: 6254162346905094157}
   - component: {fileID: 3942052105784034172}
-  - component: {fileID: 1508328249241943229}
   - component: {fileID: -9169958245201585100}
+  - component: {fileID: 8846047124222569918}
   m_Layer: 0
   m_Name: PurpleCell
   m_TagString: Untagged
@@ -86,20 +86,6 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!114 &1508328249241943229
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3552812643125455096}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 13a2eaffc8f1aec46a0ee102233b33bc, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  adjacentCells: []
-  cellColour: 4
 --- !u!65 &-9169958245201585100
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -121,3 +107,18 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.99979216, y: 0.085743904, z: 0.99979216}
   m_Center: {x: 0, y: -0.006385183, z: 0}
+--- !u!114 &8846047124222569918
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3552812643125455096}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1ed6d10cfc4d6dc4389d91cb30e576c0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  entityOnCell: {fileID: 0}
+  ownerDefaultCell: {fileID: 0}
+  cellColour: 4

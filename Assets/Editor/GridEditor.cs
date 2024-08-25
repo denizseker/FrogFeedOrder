@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEditor;
 
-[CustomEditor(typeof(Cell_Default))]
+[CustomEditor(typeof(Default_Cell))]
 public class GridEditor : Editor
 {
 #if UNITY_EDITOR
@@ -10,7 +10,7 @@ public class GridEditor : Editor
 
     public override void OnInspectorGUI()
     {
-        Cell_Default myScript = (Cell_Default)target;
+        Default_Cell myScript = (Default_Cell)target;
 
         // Entity selection
         GUILayout.Space(10);
@@ -34,7 +34,7 @@ public class GridEditor : Editor
         //Rotate button only show up when active cell have arrow or frog
         if (myScript.activeCell != null)
         {
-            var cell = myScript.activeCell.GetComponent<Cell>();
+            var cell = myScript.activeCell.GetComponent<Entity_Cell>();
             var entity = cell.entityOnCell;
 
             if (entity != null && (entity.GetComponent<Frog>() != null || entity.GetComponent<Arrow>() != null))
@@ -50,7 +50,7 @@ public class GridEditor : Editor
         DrawDefaultInspector();
     }
 
-    private void DisplayPrefabOptions(Cell_Default myScript)
+    private void DisplayPrefabOptions(Default_Cell myScript)
     {
         if (myScript.cellPrefabs == null) return;
 

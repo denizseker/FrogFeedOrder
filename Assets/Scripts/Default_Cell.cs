@@ -2,26 +2,26 @@ using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 
-public class Cell_Default : Cell
+public class Default_Cell : MonoBehaviour
 {
-    [HideInInspector] public List<Cell> adjacentCells = new List<Cell>();
-    public List<Cell> cellStack = new List<Cell>();
+    [HideInInspector] public List<Entity_Cell> adjacentCells = new List<Entity_Cell>();
+    public List<Entity_Cell> cellStack = new List<Entity_Cell>();
     public GameObject[] cellPrefabs;
     public GameObject[] frogPrefabs;
     public GameObject[] grapePrefabs;
     public GameObject[] arrowPrefabs;
+    public GameManager.Colour cellColour;
 
-    public Cell activeCell;
+    public Entity_Cell activeCell;
 
     private void OnValidate()
     {
-        activeCell = cellStack.Count > 0 ? cellStack[cellStack.Count - 1] : this;
+        activeCell = cellStack.Count > 0 ? cellStack[cellStack.Count - 1] : null;
     }
 
     private void Start()
     {
         CellManager.Instance.cells[(int)-transform.position.x, (int)transform.position.z] = this;
-        ownerDefaultCell = this;
     }
 
 
@@ -32,9 +32,9 @@ public class Cell_Default : Cell
         float height = (cellStack.Count + 1) / 10.0f;
         GameObject newCell = Instantiate(prefab, transform.position + Vector3.up * height, Quaternion.identity);
         newCell.transform.SetParent(transform);
-        newCell.GetComponent<Cell>().ownerDefaultCell = this;
-        activeCell = newCell.GetComponent<Cell>();
-        cellStack.Add(newCell.GetComponent<Cell>());
+        newCell.GetComponent<Entity_Cell>().ownerDefaultCell = this;
+        activeCell = newCell.GetComponent<Entity_Cell>();
+        cellStack.Add(newCell.GetComponent<Entity_Cell>());
 
         UpdateEntityStates();
 
@@ -56,7 +56,7 @@ public class Cell_Default : Cell
     public void UpdateEntityStates()
     {
         // Deactivate entities in all cells
-        foreach (Cell cell in cellStack)
+        foreach (Entity_Cell cell in cellStack)
         {
             if (cell == activeCell) continue;
 
@@ -74,7 +74,7 @@ public class Cell_Default : Cell
         }
     }
 
-    private void DeactivateEntities<T>(Cell cell) where T : Component
+    private void DeactivateEntities<T>(Entity_Cell cell) where T : Component
     {
         foreach (var entity in cell.GetComponentsInChildren<T>(true)) // Include inactive objects
         {
@@ -85,13 +85,15 @@ public class Cell_Default : Cell
         }
     }
 
-    private void ActivateEntities<T>(Cell cell) where T : Component
+    private void ActivateEntities<T>(Entity_Cell cell) where T : Component
     {
         foreach (var entity in cell.GetComponentsInChildren<T>(true)) // Include inactive objects
         {
             if (entity != null)
             {
                 entity.gameObject.SetActive(true);
+                entity.gameObject.transform.localScale = new Vector3(0, 0, 0);
+                entity.GetComponent<Entity>().GrowAnim();
             }
         }
     }
@@ -104,11 +106,17 @@ public class Cell_Default : Cell
             return;
         }
 
-        Cell topCell = cellStack[cellStack.Count - 1];
+        Entity_Cell topCell = cellStack[cellStack.Count - 1];
         cellStack.RemoveAt(cellStack.Count - 1);
-        activeCell = cellStack.Count > 0 ? cellStack[cellStack.Count - 1] : this;
-        DestroyImmediate(topCell.gameObject);
-
+        activeCell = cellStack.Count > 0 ? cellStack[cellStack.Count - 1] : null;
+        if (!Application.isPlaying)
+        {
+            DestroyImmediate(topCell.gameObject);
+        }
+        else
+        {
+            topCell.StartDestory();
+        }
         // Ensure activeCell is updated and entities are updated
         UpdateEntityStates();
     }
@@ -123,30 +131,23 @@ public class Cell_Default : Cell
         Debug.Log("All cells deleted.");
     }
 
-    public void AddAdjacentCell(Cell cell)
-    {
-        if (cell != null && !adjacentCells.Contains(cell))
-        {
-            adjacentCells.Add(cell);
-        }
-    }
 
     private void AddEntityToActiveCell<T>(GameObject[] prefabs, System.Func<T, GameManager.Colour> getColour) where T : Component
     {
         if (activeCell == null || activeCell == gameObject) return;
 
-        var activeCellColour = activeCell.GetComponent<Cell>().cellColour;
+        var activeCellColour = activeCell.GetComponent<Entity_Cell>().cellColour;
 
         foreach (var prefab in prefabs)
         {
             var entity = prefab.GetComponent<T>();
-            if (getColour(entity) == activeCellColour && activeCell.GetComponent<Cell>().entityOnCell == null)
+            if (getColour(entity) == activeCellColour && activeCell.GetComponent<Entity_Cell>().entityOnCell == null)
             {
                 var entityPrefab = prefab;
                 var position = activeCell.transform.position + GetEntityPosition<T>(); // Adjust position relative to activeCell
                 var instance = Instantiate(entityPrefab, position, Quaternion.identity);
                 instance.transform.parent = activeCell.transform;
-                activeCell.GetComponent<Cell>().entityOnCell = instance.GetComponent<Entity>();
+                activeCell.GetComponent<Entity_Cell>().entityOnCell = instance.GetComponent<Entity>();
                 instance.GetComponent<Entity>().entityCell = activeCell;
                 return;
             }
@@ -160,7 +161,7 @@ public class Cell_Default : Cell
         // Adjust these values according to the size of your entities
         if (typeof(T) == typeof(Frog)) return new Vector3(0, 0.15f, 0); // Adjust Y position if needed
         if (typeof(T) == typeof(Grape)) return new Vector3(0, 0.25f, 0); // Adjust Y position if needed
-        if (typeof(T) == typeof(Arrow)) return new Vector3(0, 0.35f, 0); // Adjust Y position if needed
+        if (typeof(T) == typeof(Arrow)) return new Vector3(0, 0.30f, 0); // Adjust Y position if needed
         return Vector3.zero;
     }
 
@@ -169,7 +170,7 @@ public class Cell_Default : Cell
     {
         if (activeCell != null)
         {
-            var cell = activeCell.GetComponent<Cell>();
+            var cell = activeCell.GetComponent<Entity_Cell>();
             var entity = cell.entityOnCell;
 
             if (entity != null && (entity.GetComponent<Frog>() != null || entity.GetComponent<Arrow>() != null))
@@ -192,10 +193,10 @@ public class Cell_Default : Cell
 
         foreach (var entity in activeCell.GetComponentsInChildren<T>())
         {
-            if (getColour(entity) == activeCell.GetComponent<Cell>().cellColour)
+            if (getColour(entity) == activeCell.GetComponent<Entity_Cell>().cellColour)
             {
                 DestroyImmediate(entity.gameObject);
-                activeCell.GetComponent<Cell>().entityOnCell = null;
+                activeCell.GetComponent<Entity_Cell>().entityOnCell = null;
                 entity.GetComponent<Entity>().entityCell = null;
                 return;
             }
@@ -206,39 +207,40 @@ public class Cell_Default : Cell
 
 
 
-    public Cell GetNextCell(CellManager.Direction direction)
+    public Default_Cell GetNeigborCellAtDirection(CellManager.Direction direction)
     {
-
-        Cell_Default nextCell;
+        int nextX = (int)-transform.position.x;
+        int nextZ = (int)transform.position.z;
 
         switch (direction)
         {
             case CellManager.Direction.Right:
-                nextCell = CellManager.Instance.cells[(int)-transform.position.x + 1, (int)transform.position.z];
+                nextX += 1;
                 break;
             case CellManager.Direction.Left:
-                nextCell = CellManager.Instance.cells[(int)-transform.position.x - 1, (int)transform.position.z];
+                nextX -= 1;
                 break;
             case CellManager.Direction.Up:
-                nextCell = CellManager.Instance.cells[(int)-transform.position.x, (int)transform.position.z - 1];
+                nextZ -= 1;
                 break;
             case CellManager.Direction.Down:
-                nextCell = CellManager.Instance.cells[(int)-transform.position.x, (int)transform.position.z + 1];
+                nextZ += 1;
                 break;
             default:
-                nextCell = null;
-                break;
+                return null;
         }
 
-        if (nextCell.activeCell.cellColour == activeCell.cellColour)
-        {
-            return nextCell.activeCell;
-        }
-        else
+        // Sýnýr kontrolü (5x5'lik bir grid)
+        if (nextX < 0 || nextX >= 5 || nextZ < 0 || nextZ >= 5)
         {
             return null;
         }
+
+        Default_Cell nextCell = CellManager.Instance.cells[nextX, nextZ];
+
+        return nextCell;
     }
+
 
     private void OnDrawGizmos()
     {
