@@ -1,35 +1,52 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Events;
 
 public class AudioManager : MonoBehaviour
 {
+    public static AudioManager Instance;
 
-    public static AudioManager Instance { get; private set; }
-
-    public AudioSource musicSource;
+    // Eventler
+    public UnityEvent onHit;
+    public UnityEvent onDestroy;
 
     private void Awake()
     {
-        if (Instance != null && Instance != this)
+        // Singleton Pattern
+        if (Instance == null)
         {
-            Destroy(this);
+            Instance = this;
+            DontDestroyOnLoad(gameObject);
         }
         else
         {
-            Instance = this;
+            Destroy(gameObject);
         }
     }
-    private void Start()
+
+    // Ses çalma metodlarý
+    public void PlayHitSound()
     {
-        musicSource = GetComponent<AudioSource>();
+        Debug.Log("Hit sound played!");
+        // Ses çalma kodlarý buraya gelecek.
     }
 
-    public void PlayMusic(AudioClip clip, Entity entity)
+    public void PlayDestroySound()
     {
-        musicSource.clip = clip;
-        musicSource.Play();
+        Debug.Log("Destroy sound played!");
+        // Ses çalma kodlarý buraya gelecek.
     }
 
+    private void OnEnable()
+    {
+        // Eventlere metotlarý ekliyoruz.
+        onHit.AddListener(PlayHitSound);
+        onDestroy.AddListener(PlayDestroySound);
+    }
 
+    private void OnDisable()
+    {
+        // Eventlerden metotlarý çýkarýyoruz.
+        onHit.RemoveListener(PlayHitSound);
+        onDestroy.RemoveListener(PlayDestroySound);
+    }
 }

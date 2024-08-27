@@ -96,5 +96,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d19c1fde08718fc42a6d93c334cbf418, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  ownerCell: {fileID: 0}
+  entityDirection: 0
+  entityCell: {fileID: 0}
   entityColour: 2
+  hitSound: {fileID: 8300000, guid: 7f0492e4866d9ab47a605c9070d15bfd, type: 3}
+  destroySound: {fileID: 8300000, guid: 3bf838f6bc95c01498383050fe2db0f1, type: 3}

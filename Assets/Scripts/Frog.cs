@@ -7,10 +7,8 @@ public class Frog : Entity
     private LineRenderer lineRenderer;
     private Default_Cell _defaultCell;
     private float duration = 0.3f;
-    private List<Entity_Cell> visitedCells = new List<Entity_Cell>();
-    private Sequence collectSequence;
-
-    [HideInInspector] public int grapeCountOnWay = 0;
+    public List<Entity_Cell> visitedCells = new List<Entity_Cell>();
+    public Sequence collectSequence;
 
     private void Start()
     {
@@ -49,6 +47,7 @@ public class Frog : Entity
             }
             else
             {
+                TriggerFail();
                 Debug.Log("Wrong colour arrow");
                 return;
             }
@@ -62,15 +61,21 @@ public class Frog : Entity
             }
             else
             {
+                TriggerFail();
                 Debug.Log("Wrong colour grape");
                 return;
             }
+        }
+        else if (entity is Frog frog)
+        {
+            TriggerFail();
+            Debug.Log("Hit to frog");
         }
 
         if (IsNextCellValid(cell))
             SetTongueForNextCell(cell);
         else
-            DOVirtual.DelayedCall(0.6f, StartReturnAnimation); // Delayed return animation start
+            DOVirtual.DelayedCall(0.6f,StartReturnAnimation); // Delayed return animation start
     }
 
     // Validates if the next cell in the direction is available
@@ -149,6 +154,47 @@ public class Frog : Entity
 
         collectSequence.Play(); // Play the collection sequence in parallel
         returnSequenceTongue.OnComplete(() => _defaultCell.DeleteCell()).Play();
+
+    }
+
+
+    private void TriggerFail()
+    {
+        collectSequence = DOTween.Sequence();
+        collectSequence.Pause();
+        visitedCells.Clear();
+        lineRenderer.positionCount = 0;
+
+
+        // Mevcut SkinnedMeshRenderer bileþenini al
+        SkinnedMeshRenderer skinnedMeshRenderer = GetComponentInChildren<SkinnedMeshRenderer>();
+
+        if (skinnedMeshRenderer != null)
+        {
+            // Mevcut renk ve kýrmýzý rengi tanýmla
+            Material[] materials = skinnedMeshRenderer.materials;
+            if (materials.Length > 0)
+            {
+                Color originalColor = materials[0].color;
+                Color red = Color.red;
+
+                // Rengi kýrmýzý yap ve sonra eski rengini geri getir
+                foreach (Material material in materials)
+                {
+                    material.DOColor(red, duration / 2f) // Yarým sürede kýrmýzýya dönüþ
+                        .OnComplete(() =>
+                        {
+                            // Eski rengin geri dönmesi
+                            material.DOColor(originalColor, duration / 2f);
+                        });
+                }
+            }
+        }
+        else
+        {
+            Debug.LogError("SkinnedMeshRenderer component not found.");
+        }
+
     }
 
     // Handles the mouse click event to initiate the tongue movement

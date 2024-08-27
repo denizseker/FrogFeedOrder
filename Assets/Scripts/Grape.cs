@@ -18,6 +18,9 @@ public class Grape : Entity
     // Plays the hit animation sequence
     public void Hit()
     {
+        // Plays the hit sound
+        PlaySound(hitSound);
+
         // Create a sequence for the pick-up animation
         Sequence pickUpSequence = DOTween.Sequence();
 
@@ -37,6 +40,7 @@ public class Grape : Entity
     // Sets up the grape to be collected, moving it along the specified path
     public void SetForCollect(Vector3[] cellPoints, Sequence collectSequence)
     {
+
         if (cellPoints == null || cellPoints.Length == 0)
         {
             Debug.LogWarning("cellPoints array is empty or null.");
@@ -52,7 +56,7 @@ public class Grape : Entity
         // Append each point in the reversed array to the sequence
         foreach (Vector3 point in reverseArray)
         {
-            grapeReturnSequence.Append(transform.DOMove(point, segmentDuration).SetEase(Ease.Linear));
+            grapeReturnSequence.Append(transform.DOMove(point, segmentDuration).SetEase(Ease.Linear).Pause());
         }
 
         // Set up actions on sequence start and completion
@@ -64,12 +68,16 @@ public class Grape : Entity
             })
             .OnComplete(() =>
             {
+                // Plays the destroy sound
+                PlaySound(destroySound);
+
                 // Shrink and destroy the grape after completing the movement
                 transform.DOScale(Vector3.zero, 0.3f).SetEase(Ease.Linear)
                     .OnComplete(() => Destroy(gameObject));
             });
 
         // Join the grape's return sequence with the main collection sequence
-        collectSequence.Join(grapeReturnSequence);
+        if(collectSequence.IsActive()) collectSequence.Join(grapeReturnSequence);
+
     }
 }

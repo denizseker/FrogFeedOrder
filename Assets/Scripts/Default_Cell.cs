@@ -96,7 +96,7 @@ public class Default_Cell : MonoBehaviour
                 if (Application.isPlaying)
                 {
                     entity.gameObject.transform.localScale = new Vector3(0, 0, 0);
-                    entity.GetComponent<Entity>().GrowAnim();
+                    entity.GetComponent<Entity>().TriggerSpawnAnimation();
                 } 
             }
         }
@@ -261,7 +261,9 @@ public class Default_Cell : MonoBehaviour
         style.alignment = TextAnchor.MiddleCenter; // Center text alignment
 
         // Draw the label using Handles with the created GUIStyle
+#if UNITY_EDITOR
         Handles.Label(position + Vector3.up * 0.1f, coordinates, style);
+#endif
     }
 
     private void Update()
