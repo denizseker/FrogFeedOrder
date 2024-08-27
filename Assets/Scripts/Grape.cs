@@ -3,36 +3,39 @@ using System.Collections.Generic;
 using UnityEngine;
 using DG.Tweening;
 using System.Linq;
-using System;
 
 public class Grape : Entity
 {
+    // Duration for each segment in the movement sequence
     float segmentDuration = 0.3f;
-    public Tween pathTween;
+
+    // Triggered when hit by Frog's tongue
     public override void HitByTongue(Frog frog)
     {
         Hit();
     }
 
+    // Plays the hit animation sequence
     public void Hit()
     {
-        // Animasyon sýrasý oluþtur
+        // Create a sequence for the pick-up animation
         Sequence pickUpSequence = DOTween.Sequence();
-        // Scale'i 0.7'den 1.7'ye hýzlýca artýr
+
+        // Quickly scale from 0.7 to 1.4
         pickUpSequence.Append(transform.DOScale(1.4f, 0.07f).SetEase(Ease.InOutQuad));
-        // Scale'i 1'den 0.7'ye yavaþça azalt
+
+        // Slowly scale down from 1.4 to 0.7
         pickUpSequence.Append(transform.DOScale(0.7f, 0.1f).SetEase(Ease.OutQuad));
-        // Scale'i 1.7'den 1'e yavaþça geri getir
+
+        // Slowly return scale to 1
         pickUpSequence.Append(transform.DOScale(1f, 0.1f).SetEase(Ease.OutBack));
-        // Animasyonu baþlat
+
+        // Start the animation
         pickUpSequence.Play();
     }
 
-    public void StartCollect()
-    {
-        pathTween.Play();
-    }
-    public void SetForCollect(Vector3[] cellPoints)
+    // Sets up the grape to be collected, moving it along the specified path
+    public void SetForCollect(Vector3[] cellPoints, Sequence collectSequence)
     {
         if (cellPoints == null || cellPoints.Length == 0)
         {
@@ -40,34 +43,33 @@ public class Grape : Entity
             return;
         }
 
-        //Debug.Log($"{gameObject} cellpoint last item: {cellPoints[^1]}");
-
-        float totalDuration = segmentDuration * cellPoints.Length;
-
+        // Reverse the array of points for the return path
         Vector3[] reverseArray = cellPoints.Reverse().ToArray();
 
-        pathTween = gameObject.transform.DOPath(reverseArray, totalDuration, PathType.Linear).Pause().OnComplete(() =>
-        {
+        // Create a sequence for the grape's return movement
+        Sequence grapeReturnSequence = DOTween.Sequence();
 
-            transform.DOScale(new Vector3(0, 1, 0), 0.10f).SetEase(Ease.Linear)
+        // Append each point in the reversed array to the sequence
+        foreach (Vector3 point in reverseArray)
+        {
+            grapeReturnSequence.Append(transform.DOMove(point, segmentDuration).SetEase(Ease.Linear));
+        }
+
+        // Set up actions on sequence start and completion
+        grapeReturnSequence
+            .OnStart(() =>
+            {
+                // Detach the grape from its parent to move independently
+                transform.parent = null;
+            })
             .OnComplete(() =>
             {
-                Destroy(gameObject);
+                // Shrink and destroy the grape after completing the movement
+                transform.DOScale(Vector3.zero, 0.3f).SetEase(Ease.Linear)
+                    .OnComplete(() => Destroy(gameObject));
             });
 
-        }); ;
-    }
-
-
-    // Start is called before the first frame update
-    void Start()
-    {
-        
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
+        // Join the grape's return sequence with the main collection sequence
+        collectSequence.Join(grapeReturnSequence);
     }
 }

@@ -92,8 +92,12 @@ public class Default_Cell : MonoBehaviour
             if (entity != null)
             {
                 entity.gameObject.SetActive(true);
-                entity.gameObject.transform.localScale = new Vector3(0, 0, 0);
-                entity.GetComponent<Entity>().GrowAnim();
+                
+                if (Application.isPlaying)
+                {
+                    entity.gameObject.transform.localScale = new Vector3(0, 0, 0);
+                    entity.GetComponent<Entity>().GrowAnim();
+                } 
             }
         }
     }
