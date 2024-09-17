@@ -1,6 +1,7 @@
 using UnityEngine;
 using DG.Tweening;
 using System.Collections.Generic;
+using UnityEngine.ParticleSystemJobs;
 
 public class Frog : Entity
 {
@@ -9,12 +10,19 @@ public class Frog : Entity
     private float duration = 0.3f;
     public List<Entity_Cell> visitedCells = new List<Entity_Cell>();
     public Sequence collectSequence;
+    private bool isFrogBusy = false;
 
     private void Start()
     {
         lineRenderer = GetComponent<LineRenderer>();
         _defaultCell = entityCell.ownerDefaultCell;
         collectSequence = DOTween.Sequence().Pause();  // Pause the sequence initially
+        GameManager.Instance.IncreaseFrogCount(); // Increase the frog count when the frog is created then we can check win condition
+
+        if (destroyVFX != null)
+        {
+            ObjectPool.Instance.CreatePool(destroyVFX, 10); // Create a pool with 10 objects
+        }
     }
 
     // Sets the direction based on the frog's current forward vector
@@ -57,7 +65,7 @@ public class Frog : Entity
             if (IsColourSame(cell))
             {
                 Vector3[] tempPoints = GetLineRendererPositions();
-                grape.SetForCollect(tempPoints, collectSequence);
+                grape.SetForCollect(tempPoints, collectSequence,this);
             }
             else
             {
@@ -153,10 +161,38 @@ public class Frog : Entity
         }
 
         collectSequence.Play(); // Play the collection sequence in parallel
-        returnSequenceTongue.OnComplete(() => _defaultCell.DeleteCell()).Play();
+        returnSequenceTongue.OnComplete(() => 
+        {
+            AllGrapeDoneAndExplode();
+            
+        }).Play();
 
     }
+    public void AllGrapeDoneAndExplode()
+    {
+        // Create a sequence for the frog's animation
+        Sequence frogSequence = DOTween.Sequence();
 
+        // Scale up animation to 1.5f
+        frogSequence.Append(transform.DOScale(transform.localScale + (new Vector3(0.3f, 0.3f, 0.3f)), 0.2f).SetEase(Ease.InOutQuad));
+
+        // Shake animation at 1.5f scale
+        frogSequence.Join(transform.DOShakePosition(0.3f, strength: new Vector3(0.1f, 0.1f, 0), vibrato: 20, randomness: 90, snapping: false, fadeOut: true));
+
+        // Explode animation (scale down quickly)
+        frogSequence.Append(transform.DOScale(Vector3.zero, 0.2f).SetEase(Ease.InOutQuad)
+            .OnComplete(() =>
+            {
+                // Trigger destroy VFX and destroy the frog
+                _defaultCell.DeleteCell();
+                GameManager.Instance.DecreaseFrogCount();
+                TriggerDestroyVFX();
+                Destroy(gameObject);
+            }));
+
+        // Start the animation
+        frogSequence.Play();
+    }
 
     private void TriggerFail()
     {
@@ -164,7 +200,7 @@ public class Frog : Entity
         collectSequence.Pause();
         visitedCells.Clear();
         lineRenderer.positionCount = 0;
-
+        isFrogBusy = false;
 
         // Mevcut SkinnedMeshRenderer bileþenini al
         SkinnedMeshRenderer skinnedMeshRenderer = GetComponentInChildren<SkinnedMeshRenderer>();
@@ -200,6 +236,17 @@ public class Frog : Entity
     // Handles the mouse click event to initiate the tongue movement
     private void OnMouseDown()
     {
+        if(isFrogBusy)
+        {
+            Debug.Log("Frog is busy");
+            return;
+        }
+        else
+        {
+            isFrogBusy = true;
+        }
+
+        GameManager.Instance.DecreaseMoveCount();
         if (lineRenderer == null) return;
 
         SetDirection();

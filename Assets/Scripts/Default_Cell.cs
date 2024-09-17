@@ -1,30 +1,33 @@
 using System.Collections.Generic;
 using UnityEditor;
+using UnityEditor.SceneManagement;
 using UnityEngine;
 
 public class Default_Cell : MonoBehaviour
 {
-    [HideInInspector] public List<Entity_Cell> adjacentCells = new List<Entity_Cell>();
-    public List<Entity_Cell> cellStack = new List<Entity_Cell>();
-    public GameObject[] cellPrefabs;
-    public GameObject[] frogPrefabs;
-    public GameObject[] grapePrefabs;
-    public GameObject[] arrowPrefabs;
-    public GameManager.Colour cellColour;
+    [HideInInspector] public List<Entity_Cell> adjacentCells = new List<Entity_Cell>(); // List of adjacent cells
+    public List<Entity_Cell> cellStack = new List<Entity_Cell>(); // Stack of cells in this position
+    public GameObject[] cellPrefabs; // Array of cell prefabs
+    public GameObject[] frogPrefabs; // Array of frog prefabs
+    public GameObject[] grapePrefabs; // Array of grape prefabs
+    public GameObject[] arrowPrefabs; // Array of arrow prefabs
+    public GameManager.Colour cellColour; // Color of the cell
 
-    public Entity_Cell activeCell;
+    public Entity_Cell activeCell; // Currently active cell
 
     private void OnValidate()
     {
+        // Set active cell to the top cell in the stack
         activeCell = cellStack.Count > 0 ? cellStack[cellStack.Count - 1] : null;
     }
 
     private void Start()
     {
+        // Register this cell in the CellManager
         CellManager.Instance.cells[(int)-transform.position.x, (int)transform.position.z] = this;
     }
 
-
+    // Add a new cell to the stack
     public void AddCell(GameObject prefab, string entityType)
     {
         if (prefab == null) return;
@@ -51,8 +54,15 @@ public class Default_Cell : MonoBehaviour
                 AddEntityToActiveCell<Arrow>(arrowPrefabs, arrow => arrow.entityColour);
                 break;
         }
+        if (!Application.isPlaying)
+        {
+            EditorUtility.SetDirty(gameObject);
+            EditorSceneManager.MarkSceneDirty(gameObject.scene);
+            EditorSceneManager.SaveOpenScenes();
+        }
     }
 
+    // Update the states of entities in the cells
     public void UpdateEntityStates()
     {
         // Deactivate entities in all cells
@@ -74,6 +84,7 @@ public class Default_Cell : MonoBehaviour
         }
     }
 
+    // Deactivate entities of type T in the given cell
     private void DeactivateEntities<T>(Entity_Cell cell) where T : Component
     {
         foreach (var entity in cell.GetComponentsInChildren<T>(true)) // Include inactive objects
@@ -85,6 +96,7 @@ public class Default_Cell : MonoBehaviour
         }
     }
 
+    // Activate entities of type T in the given cell
     private void ActivateEntities<T>(Entity_Cell cell) where T : Component
     {
         foreach (var entity in cell.GetComponentsInChildren<T>(true)) // Include inactive objects
@@ -92,16 +104,17 @@ public class Default_Cell : MonoBehaviour
             if (entity != null)
             {
                 entity.gameObject.SetActive(true);
-                
+
                 if (Application.isPlaying)
                 {
                     entity.gameObject.transform.localScale = new Vector3(0, 0, 0);
                     entity.GetComponent<Entity>().TriggerSpawnAnimation();
-                } 
+                }
             }
         }
     }
 
+    // Delete the top cell in the stack
     public void DeleteCell()
     {
         if (cellStack.Count == 0)
@@ -116,6 +129,10 @@ public class Default_Cell : MonoBehaviour
         if (!Application.isPlaying)
         {
             DestroyImmediate(topCell.gameObject);
+            // Save changes to the scene
+            EditorUtility.SetDirty(gameObject);
+            EditorSceneManager.MarkSceneDirty(gameObject.scene);
+            EditorSceneManager.SaveOpenScenes();
         }
         else
         {
@@ -125,6 +142,7 @@ public class Default_Cell : MonoBehaviour
         UpdateEntityStates();
     }
 
+    // Delete all cells in the stack
     public void DeleteAllCells()
     {
         while (cellStack.Count > 0)
@@ -135,7 +153,7 @@ public class Default_Cell : MonoBehaviour
         Debug.Log("All cells deleted.");
     }
 
-
+    // Add an entity to the active cell
     private void AddEntityToActiveCell<T>(GameObject[] prefabs, System.Func<T, GameManager.Colour> getColour) where T : Component
     {
         if (activeCell == null || activeCell == gameObject) return;
@@ -160,6 +178,7 @@ public class Default_Cell : MonoBehaviour
         Debug.Log($"No matching {typeof(T).Name} prefab found for the active cell color.");
     }
 
+    // Get the position offset for the entity type
     private Vector3 GetEntityPosition<T>() where T : Component
     {
         // Adjust these values according to the size of your entities
@@ -169,7 +188,7 @@ public class Default_Cell : MonoBehaviour
         return Vector3.zero;
     }
 
-    //Rotating arrow or frog
+    // Rotate the entity in the active cell
     public void RotateEntity()
     {
         if (activeCell != null)
@@ -184,33 +203,7 @@ public class Default_Cell : MonoBehaviour
         }
     }
 
-    public void AddFrogToActiveCell() => AddEntityToActiveCell<Frog>(frogPrefabs, frog => frog.entityColour);
-    public void DeleteFrogFromActiveCell() => DeleteEntityFromActiveCell<Frog>(frog => frog.entityColour);
-    public void AddGrapeToActiveCell() => AddEntityToActiveCell<Grape>(grapePrefabs, grape => grape.entityColour);
-    public void DeleteGrapeFromActiveCell() => DeleteEntityFromActiveCell<Grape>(grape => grape.entityColour);
-    public void AddArrowToActiveCell() => AddEntityToActiveCell<Arrow>(arrowPrefabs, arrow => arrow.entityColour);
-    public void DeleteArrowFromActiveCell() => DeleteEntityFromActiveCell<Arrow>(arrow => arrow.entityColour);
-
-    private void DeleteEntityFromActiveCell<T>(System.Func<T, GameManager.Colour> getColour) where T : Component
-    {
-        if (activeCell == null || activeCell == gameObject) return;
-
-        foreach (var entity in activeCell.GetComponentsInChildren<T>())
-        {
-            if (getColour(entity) == activeCell.GetComponent<Entity_Cell>().cellColour)
-            {
-                DestroyImmediate(entity.gameObject);
-                activeCell.GetComponent<Entity_Cell>().entityOnCell = null;
-                entity.GetComponent<Entity>().entityCell = null;
-                return;
-            }
-        }
-
-        Debug.Log($"No matching {typeof(T).Name} found for the active cell color.");
-    }
-
-
-
+    // Get the neighboring cell in the specified direction
     public Default_Cell GetNeigborCellAtDirection(CellManager.Direction direction)
     {
         int nextX = (int)-transform.position.x;
@@ -234,7 +227,7 @@ public class Default_Cell : MonoBehaviour
                 return null;
         }
 
-        // Sýnýr kontrolü (5x5'lik bir grid)
+        // Boundary check (5x5 grid)
         if (nextX < 0 || nextX >= 5 || nextZ < 0 || nextZ >= 5)
         {
             return null;
@@ -245,7 +238,7 @@ public class Default_Cell : MonoBehaviour
         return nextCell;
     }
 
-
+    // Draw gizmos in the editor
     private void OnDrawGizmos()
     {
         var position = transform.position;

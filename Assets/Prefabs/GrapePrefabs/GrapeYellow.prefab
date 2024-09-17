@@ -101,3 +101,4 @@ MonoBehaviour:
   entityColour: 3
   hitSound: {fileID: 8300000, guid: 7f0492e4866d9ab47a605c9070d15bfd, type: 3}
   destroySound: {fileID: 8300000, guid: 3bf838f6bc95c01498383050fe2db0f1, type: 3}
+  destroyVFX: {fileID: 1871962134327168, guid: b2161604ab8c9cf4e8074a811cb72f76, type: 3}

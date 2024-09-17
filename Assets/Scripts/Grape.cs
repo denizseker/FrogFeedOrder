@@ -12,35 +12,27 @@ public class Grape : Entity
     // Triggered when hit by Frog's tongue
     public override void HitByTongue(Frog frog)
     {
-        Hit();
+        Hit(); // Play hit animation
     }
 
     // Plays the hit animation sequence
     public void Hit()
     {
-        // Plays the hit sound
-        PlaySound(hitSound);
+        PlaySound(hitSound); // Play hit sound
+        Vector3 originalScale = transform.localScale;
 
-        // Create a sequence for the pick-up animation
-        Sequence pickUpSequence = DOTween.Sequence();
-
-        // Quickly scale from 0.7 to 1.4
-        pickUpSequence.Append(transform.DOScale(1.4f, 0.07f).SetEase(Ease.InOutQuad));
-
-        // Slowly scale down from 1.4 to 0.7
-        pickUpSequence.Append(transform.DOScale(0.7f, 0.1f).SetEase(Ease.OutQuad));
-
-        // Slowly return scale to 1
-        pickUpSequence.Append(transform.DOScale(1f, 0.1f).SetEase(Ease.OutBack));
-
-        // Start the animation
-        pickUpSequence.Play();
+        // Scale animation
+        transform.DOScale(new Vector3(1.5f, 0.5f, 1.5f), 0.1f)
+            .OnComplete(() =>
+            {
+                // Return to original scale
+                transform.DOScale(originalScale, 0.1f);
+            });
     }
 
     // Sets up the grape to be collected, moving it along the specified path
-    public void SetForCollect(Vector3[] cellPoints, Sequence collectSequence)
+    public void SetForCollect(Vector3[] cellPoints, Sequence collectSequence, Frog frog)
     {
-
         if (cellPoints == null || cellPoints.Length == 0)
         {
             Debug.LogWarning("cellPoints array is empty or null.");
@@ -56,7 +48,7 @@ public class Grape : Entity
         // Append each point in the reversed array to the sequence
         foreach (Vector3 point in reverseArray)
         {
-            grapeReturnSequence.Append(transform.DOMove(point, segmentDuration).SetEase(Ease.Linear).Pause());
+            grapeReturnSequence.Append(transform.DOMove(point, segmentDuration).SetEase(Ease.Linear));
         }
 
         // Set up actions on sequence start and completion
@@ -68,16 +60,19 @@ public class Grape : Entity
             })
             .OnComplete(() =>
             {
-                // Plays the destroy sound
-                PlaySound(destroySound);
-
-                // Shrink and destroy the grape after completing the movement
-                transform.DOScale(Vector3.zero, 0.3f).SetEase(Ease.Linear)
-                    .OnComplete(() => Destroy(gameObject));
+                // Increase frog size
+                Vector3 currentScale = frog.transform.localScale;
+                Vector3 newScale = currentScale + new Vector3(0.1f, 0.1f, 0.1f);
+                frog.transform.DOScale(newScale, 0.1f).SetEase(Ease.InOutQuad);
+                PlaySound(destroySound); // Play destroy sound
+                TriggerDestroyVFX(); // Play destroy visual effect
             });
 
-        // Join the grape's return sequence with the main collection sequence
-        if(collectSequence.IsActive()) collectSequence.Join(grapeReturnSequence);
+        // Start shrinking the grape when the last DOMove starts
+        grapeReturnSequence.Insert(grapeReturnSequence.Duration() - segmentDuration, transform.DOScale(Vector3.zero, segmentDuration).SetEase(Ease.Linear)
+            .OnComplete(() => Destroy(gameObject))); // Destroy grape
 
+        // Join the grape's return sequence with the main collection sequence
+        if (collectSequence.IsActive()) collectSequence.Join(grapeReturnSequence);
     }
 }

@@ -2446,9 +2446,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dd6ac59390ceb0c4085a593dd35c0ec9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  entityDirection: 0
   entityCell: {fileID: 0}
   entityColour: 2
-  endPoint: {x: 0, y: 0, z: 0}
+  hitSound: {fileID: 0}
+  destroySound: {fileID: 0}
+  destroyVFX: {fileID: 1910521575206956, guid: 554d7b66a092be044b29fc508c47b6f1, type: 3}
+  visitedCells: []
 --- !u!65 &3327838571210967194
 BoxCollider:
   m_ObjectHideFlags: 0
